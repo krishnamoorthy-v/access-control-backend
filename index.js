@@ -4,17 +4,29 @@ const { RedisStore } = require("connect-redis"); // <- important change
 const { createClient } = require("redis");
 const cors = require("cors");
 const { Permission } = require("./constant");
+require("dotenv").config();
 
 const app = express();
-const PORT = 3000;
-
+const PORT = process.env.PORT;
+const ORIGIN = process.env.ORIGIN;
+console.log(ORIGIN)
 // Create Redis client
 let redisClient = createClient({ legacyMode: true });
 redisClient.connect().catch(console.error);
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function(origin, callback){
+    // allow requests with no origin like mobile apps or curl
+    // console.log(origin, ORIGIN)
+    // console.log(ORIGIN.indexOf(origin))
+    if(!origin) return callback(null, true);
+    if(ORIGIN.indexOf(origin) === -1){
+      const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
